@@ -6,6 +6,7 @@ import { SafeAreaView as RNSafeAreaView } from "react-native-safe-area-context";
 import { styled } from "nativewind";
 import { useRouter } from "expo-router";
 import { useAuth } from "@clerk/expo";
+import { posthog } from "@/lib/posthog";
 
 const SafeAreaView = styled(RNSafeAreaView);
 
@@ -18,6 +19,8 @@ const Settings = () => {
     setSigningOut(true)
     try {
       await signOut()
+      posthog?.capture('sign_out_completed')
+      posthog?.reset()
       router.replace('/(auth)/sign-in')
     } finally {
       setSigningOut(false)

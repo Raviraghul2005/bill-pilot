@@ -18,6 +18,7 @@ import {
   type ResetPasswordErrors,
 } from '@/lib/validation'
 import { getAuthErrorMessage, getAuthFieldErrors } from '@/lib/auth-errors'
+import { posthog } from '@/lib/posthog'
 
 const SafeAreaView = styled(RNSafeAreaView)
 
@@ -86,6 +87,7 @@ const ForgotPassword = () => {
         return
       }
 
+      posthog?.capture('password_reset_requested')
       setStage('reset')
     } catch (err) {
       setFormError(getAuthErrorMessage(err))
@@ -117,6 +119,7 @@ const ForgotPassword = () => {
 
       if (signIn.status === 'complete') {
         await signIn.finalize()
+        posthog?.capture('password_reset_completed')
         router.replace('/(tabs)')
       } else {
         router.replace({ pathname: '/(auth)/sign-in', params: { reset: '1' } })

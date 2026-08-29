@@ -17,6 +17,7 @@ import {
   type SignUpErrors,
 } from '@/lib/validation'
 import { getAuthErrorMessage, getAuthFieldErrors } from '@/lib/auth-errors'
+import { posthog } from '@/lib/posthog'
 
 const SafeAreaView = styled(RNSafeAreaView)
 
@@ -89,6 +90,7 @@ const SignUp = () => {
         return
       }
 
+      posthog?.capture('sign_up_started')
       setStage('verify')
     } catch (err) {
       setFormError(getAuthErrorMessage(err))
@@ -115,6 +117,7 @@ const SignUp = () => {
 
       if (signUp.status === 'complete') {
         await signUp.finalize()
+        posthog?.capture('sign_up_completed')
         router.replace('/(tabs)')
       } else {
         setFormError("We couldn't finish verifying your account. Please try again or request a new code.")
