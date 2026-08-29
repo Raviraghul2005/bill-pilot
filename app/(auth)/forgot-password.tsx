@@ -3,7 +3,7 @@ import { ScrollView, View, Text, Pressable } from 'react-native'
 import { styled } from 'nativewind'
 import { SafeAreaView as RNSafeAreaView } from 'react-native-safe-area-context'
 import { Link, useRouter } from 'expo-router'
-import { useSignUp } from '@clerk/expo'
+import { useSignIn } from '@clerk/expo'
 
 import AuthBrandHeader from '@/components/auth/AuthBrandHeader'
 import AuthHeading from '@/components/auth/AuthHeading'
@@ -11,85 +11,82 @@ import AuthTextField from '@/components/auth/AuthTextField'
 import AuthPrimaryButton from '@/components/auth/AuthPrimaryButton'
 import AuthBanner from '@/components/auth/AuthBanner'
 import {
-  validateSignUp,
-  validateCode,
+  validateRequestReset,
+  validateResetPassword,
   hasValidationErrors,
-  type SignUpErrors,
+  type RequestResetErrors,
+  type ResetPasswordErrors,
 } from '@/lib/validation'
 import { getAuthErrorMessage, getAuthFieldErrors } from '@/lib/auth-errors'
 
 const SafeAreaView = styled(RNSafeAreaView)
 
-type Stage = 'form' | 'verify'
+type Stage = 'request' | 'reset'
 
-const SignUp = () => {
-  const { signUp } = useSignUp()
+const ForgotPassword = () => {
+  const { signIn } = useSignIn()
   const router = useRouter()
 
-  const [stage, setStage] = useState<Stage>('form')
+  const [stage, setStage] = useState<Stage>('request')
 
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [errors, setErrors] = useState<SignUpErrors & { code?: string }>({})
+  const [requestErrors, setRequestErrors] = useState<RequestResetErrors>({})
   const [formError, setFormError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
   const [code, setCode] = useState('')
-  const [verifying, setVerifying] = useState(false)
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [resetErrors, setResetErrors] = useState<ResetPasswordErrors>({})
   const [resending, setResending] = useState(false)
   const [resendNotice, setResendNotice] = useState<string | null>(null)
 
   const onChangeEmail = (text: string) => {
     setEmail(text)
-    setErrors((prev) => ({ ...prev, email: undefined }))
-    setFormError(null)
-  }
-
-  const onChangePassword = (text: string) => {
-    setPassword(text)
-    setErrors((prev) => ({ ...prev, password: undefined }))
-    setFormError(null)
-  }
-
-  const onChangeConfirmPassword = (text: string) => {
-    setConfirmPassword(text)
-    setErrors((prev) => ({ ...prev, confirmPassword: undefined }))
+    setRequestErrors((prev) => ({ ...prev, email: undefined }))
     setFormError(null)
   }
 
   const onChangeCode = (text: string) => {
     setCode(text)
-    setErrors((prev) => ({ ...prev, code: undefined }))
+    setResetErrors((prev) => ({ ...prev, code: undefined }))
     setFormError(null)
     setResendNotice(null)
   }
 
-  const onSubmitForm = async () => {
-    const nextErrors = validateSignUp({ email, password, confirmPassword })
-    setErrors(nextErrors)
+  const onChangePassword = (text: string) => {
+    setPassword(text)
+    setResetErrors((prev) => ({ ...prev, password: undefined }))
+    setFormError(null)
+  }
+
+  const onChangeConfirmPassword = (text: string) => {
+    setConfirmPassword(text)
+    setResetErrors((prev) => ({ ...prev, confirmPassword: undefined }))
+    setFormError(null)
+  }
+
+  const onRequestCode = async () => {
+    const nextErrors = validateRequestReset({ email })
+    setRequestErrors(nextErrors)
     if (hasValidationErrors(nextErrors)) return
 
     setSubmitting(true)
     try {
-      const { error: passwordError } = await signUp.password({
-        emailAddress: email.trim(),
-        password,
-      })
-
-      if (passwordError) {
-        setErrors((prev) => ({ ...prev, ...getAuthFieldErrors(passwordError) }))
-        setFormError(getAuthErrorMessage(passwordError))
+      const { error: createError } = await signIn.create({ identifier: email.trim() })
+      if (createError) {
+        setRequestErrors((prev) => ({ ...prev, ...getAuthFieldErrors(createError) }))
+        setFormError(getAuthErrorMessage(createError))
         return
       }
 
-      const { error: codeError } = await signUp.verifications.sendEmailCode()
-      if (codeError) {
-        setFormError(getAuthErrorMessage(codeError))
+      const { error: sendError } = await signIn.resetPasswordEmailCode.sendCode()
+      if (sendError) {
+        setFormError(getAuthErrorMessage(sendError))
         return
       }
 
-      setStage('verify')
+      setStage('reset')
     } catch (err) {
       setFormError(getAuthErrorMessage(err))
     } finally {
@@ -97,40 +94,45 @@ const SignUp = () => {
     }
   }
 
-  const onVerify = async () => {
-    const codeErrorMessage = validateCode(code)
-    if (codeErrorMessage) {
-      setErrors((prev) => ({ ...prev, code: codeErrorMessage }))
-      return
-    }
+  const onSubmitReset = async () => {
+    const nextErrors = validateResetPassword({ code, password, confirmPassword })
+    setResetErrors(nextErrors)
+    if (hasValidationErrors(nextErrors)) return
 
-    setVerifying(true)
+    setSubmitting(true)
     try {
-      const { error } = await signUp.verifications.verifyEmailCode({ code })
-      if (error) {
-        setErrors((prev) => ({ ...prev, ...getAuthFieldErrors(error) }))
-        setFormError(getAuthErrorMessage(error))
+      const { error: verifyError } = await signIn.resetPasswordEmailCode.verifyCode({ code })
+      if (verifyError) {
+        setResetErrors((prev) => ({ ...prev, ...getAuthFieldErrors(verifyError) }))
+        setFormError(getAuthErrorMessage(verifyError))
         return
       }
 
-      if (signUp.status === 'complete') {
-        await signUp.finalize()
+      const { error: submitError } = await signIn.resetPasswordEmailCode.submitPassword({ password })
+      if (submitError) {
+        setResetErrors((prev) => ({ ...prev, ...getAuthFieldErrors(submitError) }))
+        setFormError(getAuthErrorMessage(submitError))
+        return
+      }
+
+      if (signIn.status === 'complete') {
+        await signIn.finalize()
         router.replace('/(tabs)')
       } else {
-        setFormError("We couldn't finish verifying your account. Please try again or request a new code.")
+        router.replace({ pathname: '/(auth)/sign-in', params: { reset: '1' } })
       }
     } catch (err) {
       setFormError(getAuthErrorMessage(err))
     } finally {
-      setVerifying(false)
+      setSubmitting(false)
     }
   }
 
-  const onResend = async () => {
+  const onResendCode = async () => {
     setResending(true)
     setFormError(null)
     try {
-      const { error } = await signUp.verifications.sendEmailCode()
+      const { error } = await signIn.resetPasswordEmailCode.sendCode()
       if (error) {
         setFormError(getAuthErrorMessage(error))
         return
@@ -144,8 +146,10 @@ const SignUp = () => {
   }
 
   const onChangeEmailPressed = () => {
-    setStage('form')
+    setStage('request')
     setCode('')
+    setPassword('')
+    setConfirmPassword('')
     setFormError(null)
     setResendNotice(null)
   }
@@ -159,9 +163,12 @@ const SignUp = () => {
       >
         <AuthBrandHeader />
 
-        {stage === 'form' ? (
+        {stage === 'request' ? (
           <>
-            <AuthHeading title="Create your account" subtitle="Track every subscription in one place." />
+            <AuthHeading
+              title="Reset your password"
+              subtitle="Enter your email and we'll send you a reset code."
+            />
 
             <View className="auth-card">
               <View className="auth-form">
@@ -169,50 +176,27 @@ const SignUp = () => {
                   label="Email"
                   value={email}
                   onChangeText={onChangeEmail}
-                  error={errors.email}
+                  error={requestErrors.email}
                   placeholder="Enter your email"
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoComplete="email"
                   textContentType="emailAddress"
                 />
-                <AuthTextField
-                  label="Password"
-                  value={password}
-                  onChangeText={onChangePassword}
-                  error={errors.password}
-                  placeholder="Create a password"
-                  secureTextEntry
-                  autoComplete="new-password"
-                  textContentType="newPassword"
-                />
-                <AuthTextField
-                  label="Confirm Password"
-                  value={confirmPassword}
-                  onChangeText={onChangeConfirmPassword}
-                  error={errors.confirmPassword}
-                  placeholder="Re-enter your password"
-                  secureTextEntry
-                  autoComplete="new-password"
-                  textContentType="newPassword"
-                />
 
                 <AuthBanner message={formError} />
 
                 <AuthPrimaryButton
-                  label="Create Account"
-                  onPress={onSubmitForm}
+                  label="Send Code"
+                  onPress={onRequestCode}
                   loading={submitting}
                   disabled={submitting}
                 />
-
-                {/* Required by Clerk for sign-up on web; a harmless empty view on iOS/Android. */}
-                <View nativeID="clerk-captcha" />
               </View>
             </View>
 
             <View className="auth-link-row">
-              <Text className="auth-link-copy">Already have an account?</Text>
+              <Text className="auth-link-copy">Remembered your password?</Text>
               <Link href="/(auth)/sign-in" className="auth-link">
                 Sign in
               </Link>
@@ -220,7 +204,10 @@ const SignUp = () => {
           </>
         ) : (
           <>
-            <AuthHeading title="Check your email" subtitle={`We sent a code to ${email.trim()}`} />
+            <AuthHeading
+              title="Enter your new password"
+              subtitle={`Enter the code we sent to ${email.trim()}`}
+            />
 
             <View className="auth-card">
               <View className="auth-form">
@@ -228,14 +215,14 @@ const SignUp = () => {
                   label="Verification Code"
                   value={code}
                   onChangeText={onChangeCode}
-                  error={errors.code}
+                  error={resetErrors.code}
                   placeholder="000000"
                   keyboardType="number-pad"
                   inputClassName="auth-code-input"
                 />
 
                 <View className="flex-row items-center justify-between">
-                  <Pressable onPress={onResend} disabled={resending}>
+                  <Pressable onPress={onResendCode} disabled={resending}>
                     <Text className="auth-link">{resending ? 'Resending...' : 'Resend code'}</Text>
                   </Pressable>
                   <Pressable onPress={onChangeEmailPressed}>
@@ -245,13 +232,34 @@ const SignUp = () => {
 
                 {resendNotice ? <Text className="auth-helper">{resendNotice}</Text> : null}
 
+                <AuthTextField
+                  label="New Password"
+                  value={password}
+                  onChangeText={onChangePassword}
+                  error={resetErrors.password}
+                  placeholder="Create a new password"
+                  secureTextEntry
+                  autoComplete="new-password"
+                  textContentType="newPassword"
+                />
+                <AuthTextField
+                  label="Confirm New Password"
+                  value={confirmPassword}
+                  onChangeText={onChangeConfirmPassword}
+                  error={resetErrors.confirmPassword}
+                  placeholder="Re-enter your new password"
+                  secureTextEntry
+                  autoComplete="new-password"
+                  textContentType="newPassword"
+                />
+
                 <AuthBanner message={formError} />
 
                 <AuthPrimaryButton
-                  label="Verify Email"
-                  onPress={onVerify}
-                  loading={verifying}
-                  disabled={verifying}
+                  label="Reset Password"
+                  onPress={onSubmitReset}
+                  loading={submitting}
+                  disabled={submitting}
                 />
               </View>
             </View>
@@ -262,4 +270,4 @@ const SignUp = () => {
   )
 }
 
-export default SignUp
+export default ForgotPassword
