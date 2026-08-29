@@ -1,19 +1,20 @@
 import images from "@/constants/images";
 import "@/global.css";
-import { FlatList, Image, Text, View } from "react-native";
+import { FlatList, Image, Pressable, Text, View } from "react-native";
 
+import CreateSubscriptionModal from "@/components/CreateSubscriptionModal";
 import ListHeading from "@/components/ListHeading";
 import SubscriptionCard from "@/components/SubscriptionCard";
 import UpcomingSubscriptionCard from "@/components/UpcomingSubscriptionCard";
 import {
   HOME_BALANCE,
-  HOME_SUBSCRIPTIONS,
   HOME_USER,
   UPCOMING_SUBSCRIPTIONS,
 } from "@/constants/data";
 import { icons } from "@/constants/icons";
 import { formatCurrency } from "@/lib/utils";
 import { posthog } from "@/lib/posthog";
+import { useSubscriptions } from "@/lib/subscriptions";
 import dayjs from "dayjs";
 import { styled } from "nativewind";
 import { useState } from "react";
@@ -24,6 +25,9 @@ export default function App() {
   const [expandedSubscriptionId, setExpandedSubscriptionId] = useState<
     string | null
   >(null);
+  const { subscriptions, addSubscription } = useSubscriptions();
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+
   return (
     <SafeAreaView className="flex-1 bg-background p-5">
         <FlatList
@@ -34,7 +38,16 @@ export default function App() {
                 <Image source={images.avatar} className="home-avatar" />
                 <Text className="home-user-name">{HOME_USER.name}</Text>
               </View>
-              <Image source={icons.add} className="home-add-icon" />
+              <Pressable
+                onPress={() => {
+                  posthog?.capture('create_subscription_opened');
+                  setIsCreateOpen(true);
+                }}
+                hitSlop={8}
+                accessibilityLabel="Add subscription"
+              >
+                <Image source={icons.add} className="home-add-icon" />
+              </Pressable>
             </View>
 
             <View className="home-balance-card">
@@ -67,7 +80,7 @@ export default function App() {
             <ListHeading title="All Subscriptions" />
             </>
           )}
-          data={HOME_SUBSCRIPTIONS}
+          data={subscriptions}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <SubscriptionCard
@@ -95,6 +108,11 @@ export default function App() {
           contentContainerClassName="pb-30"
         />
 
+        <CreateSubscriptionModal
+          visible={isCreateOpen}
+          onClose={() => setIsCreateOpen(false)}
+          onCreate={addSubscription}
+        />
     </SafeAreaView>
   );
 }

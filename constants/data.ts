@@ -11,6 +11,36 @@ export const HOME_USER = {
     name: "RAVIRAGHUL S",
 };
 
+export const SUBSCRIPTION_CATEGORIES = [
+    "Entertainment",
+    "AI Tools",
+    "Developer Tools",
+    "Design",
+    "Productivity",
+    "Cloud",
+    "Music",
+    "Other",
+] as const;
+
+export type SubscriptionCategory = (typeof SUBSCRIPTION_CATEGORIES)[number];
+
+export const SUBSCRIPTION_FREQUENCIES = ["Monthly", "Yearly"] as const;
+
+export type SubscriptionFrequency = (typeof SUBSCRIPTION_FREQUENCIES)[number];
+
+// Card tints in the same pastel family as the seeded subscriptions below, so a
+// newly created subscription doesn't stand out against the existing list.
+export const CATEGORY_COLORS: Record<SubscriptionCategory, string> = {
+    Entertainment: "#f7c6c6",
+    "AI Tools": "#b8d4e3",
+    "Developer Tools": "#e8def8",
+    Design: "#f5c542",
+    Productivity: "#b8e8d0",
+    Cloud: "#c9ddf5",
+    Music: "#8fd1bd",
+    Other: "#f6eecf",
+};
+
 export const HOME_BALANCE = {
     amount: 2489.48,
     nextRenewalDate: "2026-03-18T09:00:00.000Z",
