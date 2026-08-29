@@ -12,6 +12,7 @@ import AuthPrimaryButton from '@/components/auth/AuthPrimaryButton'
 import AuthBanner from '@/components/auth/AuthBanner'
 import { validateSignIn, hasValidationErrors, type SignInErrors } from '@/lib/validation'
 import { getAuthErrorMessage, getAuthFieldErrors } from '@/lib/auth-errors'
+import { posthog } from '@/lib/posthog'
 
 const SafeAreaView = styled(RNSafeAreaView)
 
@@ -55,6 +56,7 @@ const SignIn = () => {
 
       if (signIn.status === 'complete') {
         await signIn.finalize()
+        posthog?.capture('sign_in_completed')
         router.replace('/(tabs)')
       } else {
         setFormError(

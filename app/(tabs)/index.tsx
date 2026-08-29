@@ -13,6 +13,7 @@ import {
 } from "@/constants/data";
 import { icons } from "@/constants/icons";
 import { formatCurrency } from "@/lib/utils";
+import { posthog } from "@/lib/posthog";
 import dayjs from "dayjs";
 import { styled } from "nativewind";
 import { useState } from "react";
@@ -72,11 +73,17 @@ export default function App() {
             <SubscriptionCard
               {...item}
               expanded={expandedSubscriptionId === item.id}
-              onPress={() =>
-                setExpandedSubscriptionId((currentId) =>
-                  currentId === item.id ? null : item.id,
-                )
-              }
+              onPress={() => {
+                const isExpanding = expandedSubscriptionId !== item.id;
+                posthog?.capture('subscription_details_toggled', {
+                  subscription_id: item.id,
+                  is_expanded: isExpanding,
+                  category: item.category ?? null,
+                  billing_interval: item.billing,
+                  subscription_status: item.status ?? null,
+                });
+                setExpandedSubscriptionId(isExpanding ? item.id : null);
+              }}
             />
           )}
           extraData={expandedSubscriptionId}
