@@ -1,3 +1,5 @@
+import { parsePriceInput } from "./utils";
+
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
 
 export const isValidEmail = (value: string): boolean => EMAIL_PATTERN.test(value.trim());
@@ -61,6 +63,29 @@ export type RequestResetErrors = Partial<Record<"email", string>>;
 
 export const validateRequestReset = (values: { email: string }): RequestResetErrors => ({
   email: validateEmail(values.email),
+});
+
+export const validateSubscriptionName = (value: string): string | undefined => {
+  if (!value.trim()) return "Name is required";
+  return undefined;
+};
+
+export const validateSubscriptionPrice = (value: string): string | undefined => {
+  if (!value.trim()) return "Price is required";
+  const parsed = parsePriceInput(value);
+  if (!Number.isFinite(parsed)) return "Enter a valid amount";
+  if (parsed <= 0) return "Price must be greater than 0";
+  return undefined;
+};
+
+export type SubscriptionErrors = Partial<Record<"name" | "price", string>>;
+
+export const validateSubscription = (values: {
+  name: string;
+  price: string;
+}): SubscriptionErrors => ({
+  name: validateSubscriptionName(values.name),
+  price: validateSubscriptionPrice(values.price),
 });
 
 export type ResetPasswordErrors = Partial<Record<"code" | "password" | "confirmPassword", string>>;
