@@ -42,6 +42,11 @@ export const components = {
     iconFrame: spacing[12],
     itemPaddingVertical: spacing[2],
   },
+  chart: {
+    height: 200,
+    barWidth: spacing[3],
+    tickCount: 5,
+  },
 } as const;
 
 export const theme = {

@@ -497,4 +497,130 @@
     .category-chip-text-active {
         @apply text-accent;
     }
+
+    .insights-header {
+        @apply mb-2 items-center py-2;
+    }
+
+    .insights-title {
+        @apply text-2xl font-sans-bold text-primary;
+    }
+
+    .chart-card {
+        /* Extra top padding is headroom for the peak bar's tooltip, which
+           renders above a bar that can reach the full plot height. */
+        @apply rounded-3xl bg-muted px-5 pb-5 pt-10;
+    }
+
+    .chart-plot {
+        @apply flex-row;
+    }
+
+    .chart-axis {
+        @apply mr-3 justify-between;
+    }
+
+    .chart-axis-label {
+        @apply text-xs font-sans-medium text-muted-foreground;
+    }
+
+    .chart-stack {
+        @apply flex-1;
+    }
+
+    .chart-canvas {
+        @apply relative;
+    }
+
+    .chart-grid {
+        @apply absolute inset-0 justify-between;
+    }
+
+    .chart-gridline {
+        @apply h-px bg-black/10;
+    }
+
+    .chart-bars {
+        @apply absolute inset-0 flex-row items-end;
+    }
+
+    .chart-bar-slot {
+        @apply flex-1 items-center justify-end;
+    }
+
+    .chart-bar {
+        @apply rounded-full bg-primary;
+    }
+
+    .chart-bar-peak {
+        @apply bg-accent;
+    }
+
+    .chart-tooltip {
+        @apply mb-2 rounded-full border border-border bg-card px-3 py-1;
+    }
+
+    .chart-tooltip-text {
+        @apply text-xs font-sans-bold text-accent;
+    }
+
+    .chart-labels {
+        @apply mt-3 flex-row;
+    }
+
+    .chart-label-slot {
+        @apply flex-1 items-center;
+    }
+
+    .chart-day-label {
+        @apply text-xs font-sans-semibold text-muted-foreground;
+    }
+
+    .chart-empty {
+        @apply items-center justify-center gap-1;
+    }
+
+    .chart-empty-title {
+        @apply text-base font-sans-bold text-primary;
+    }
+
+    .chart-empty-copy {
+        @apply max-w-[240px] text-center text-sm font-sans-medium text-muted-foreground;
+    }
+
+    .expense-card {
+        @apply mt-4 gap-2 rounded-3xl border border-border bg-card p-5;
+    }
+
+    .expense-row {
+        @apply flex-row items-center justify-between;
+    }
+
+    .expense-label {
+        @apply text-xl font-sans-bold text-primary;
+    }
+
+    .expense-amount {
+        @apply text-2xl font-sans-extrabold text-primary;
+    }
+
+    .expense-period {
+        @apply text-sm font-sans-medium text-muted-foreground;
+    }
+
+    .expense-change {
+        @apply text-sm font-sans-bold;
+    }
+
+    .expense-change-up {
+        @apply text-destructive;
+    }
+
+    .expense-change-down {
+        @apply text-success;
+    }
+
+    .expense-change-flat {
+        @apply text-muted-foreground;
+    }
 }
